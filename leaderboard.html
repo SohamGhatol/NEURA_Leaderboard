@@ -1,0 +1,1020 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Leaderboard Reveal — NEURA</title>
+  <meta name="theme-color" content="#04050b">
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="./styles/neura-core.css?v=3">
+  <link rel="stylesheet" href="./styles/neura-shell.css?v=3">
+  <link rel="stylesheet" href="./styles/neura-components.css?v=3">
+  <style>
+    :root {
+      --ac: #6ee7ff
+    }
+
+    .lb-layout {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 90px 20px 40px;
+      text-align: center
+    }
+
+    .trophy {
+      font-size: 64px;
+      animation: flt 3s ease-in-out infinite
+    }
+
+    .glow {
+      color: var(--cyan, #6ee7ff);
+      text-shadow: 0 0 24px var(--cyan, #6ee7ff);
+      animation: pop .9s both
+    }
+
+    .top-n {
+      font: 700 clamp(32px, 8vw, 52px) var(--disp, inherit);
+      margin: 8px 0 36px;
+      background: linear-gradient(90deg, #ffd700, #ff8a9b, #b06aff, #ffd700);
+      background-size: 300% 100%;
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: shine 4s linear infinite
+    }
+
+    .pulse {
+      animation: pls 1.6s infinite
+    }
+
+    @keyframes flt {
+      50% {
+        transform: translateY(-12px) rotate(6deg)
+      }
+    }
+
+    @keyframes shine {
+      to {
+        background-position: 300% 0
+      }
+    }
+
+    @keyframes pls {
+      0% {
+        box-shadow: 0 0 0 0 rgba(176, 106, 255, .7)
+      }
+
+      100% {
+        box-shadow: 0 0 0 26px transparent
+      }
+    }
+
+    @keyframes pop {
+      0% {
+        transform: scale(.3);
+        opacity: 0
+      }
+
+      100% {
+        transform: scale(1);
+        opacity: 1
+      }
+    }
+
+    /* modal rows */
+    .tr {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      padding: 8px 12px;
+      border: 1px solid var(--line, #2a2d45);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, .02);
+      order: 1000;
+      transition: .2s
+    }
+
+    .tr[hidden] {
+      display: none
+    }
+
+    .tr.on {
+      border-color: var(--cyan, #6ee7ff);
+      background: rgba(176, 106, 255, .1);
+      cursor: grab
+    }
+
+    .tr.over {
+      outline: 2px dashed var(--cyan, #6ee7ff)
+    }
+
+    .tr .rk {
+      width: 32px;
+      text-align: center;
+      font: 700 14px var(--mono, monospace);
+      color: var(--cyan, #6ee7ff)
+    }
+
+    .tr label {
+      flex: 1;
+      min-width: 120px;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      margin: 0
+    }
+
+    .tr .f {
+      width: 120px;
+      margin: 0
+    }
+
+    .tr .f+.f {
+      width: 140px
+    }
+
+    .tr .mv {
+      display: none;
+      gap: 4px
+    }
+
+    .tr.on .mv {
+      display: flex
+    }
+
+    .tr input.bad {
+      border-color: var(--red, #f55) !important
+    }
+
+    .mv button {
+      background: none;
+      border: 1px solid var(--line, #2a2d45);
+      color: inherit;
+      border-radius: 6px;
+      width: 28px;
+      height: 28px;
+      cursor: pointer
+    }
+
+    @media(max-width:640px) {
+
+      .tr .f,
+      .tr .f+.f {
+        flex: 1;
+        width: auto
+      }
+    }
+
+    /* stage */
+    #revealStage {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden
+    }
+
+    #revealStage.paused * {
+      animation-play-state: paused !important
+    }
+
+    #dim {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at 50% 45%, transparent 5%, rgba(0, 0, 0, .88));
+      opacity: 0;
+      transition: opacity 1s
+    }
+
+    .top #dim {
+      opacity: 1
+    }
+
+    #rays {
+      position: absolute;
+      width: 200vmax;
+      height: 200vmax;
+      left: 50%;
+      top: 50%;
+      margin: -100vmax 0 0 -100vmax;
+      background: repeating-conic-gradient(color-mix(in srgb, var(--ac) 30%, transparent) 0 7deg, transparent 7deg 22deg);
+      -webkit-mask-image: radial-gradient(circle, #000, transparent 35%);
+      mask-image: radial-gradient(circle, #000, transparent 35%);
+      opacity: 0;
+      transition: opacity 1s;
+      animation: spin 20s linear infinite
+    }
+
+    #rays.on {
+      opacity: 1
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg)
+      }
+    }
+
+    .ctl {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      display: flex;
+      gap: 8px;
+      z-index: 110
+    }
+
+    #cd {
+      position: absolute;
+      font: 700 min(42vw, 230px)/1 var(--disp, inherit);
+      color: #fff;
+      text-shadow: 0 0 60px var(--ac);
+      text-align: center
+    }
+
+    #cd small {
+      display: block;
+      font-size: min(7vw, 34px);
+      letter-spacing: .1em;
+      opacity: .8
+    }
+
+    #cards {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center
+    }
+
+    .rc {
+      position: absolute;
+      width: min(92vw, 440px);
+      perspective: 1200px;
+      transform: translateX(110vw);
+      transition: transform .9s cubic-bezier(.2, .8, .2, 1), opacity .6s
+    }
+
+    .rc.in {
+      transform: none
+    }
+
+    .rc.out {
+      transform: translateX(-110vw);
+      opacity: 0
+    }
+
+    .rc.t1,
+    .rc.t2,
+    .rc.t3 {
+      width: min(94vw, 520px)
+    }
+
+    .fl {
+      display: grid;
+      transform-style: preserve-3d;
+      transition: transform 1s cubic-bezier(.3, 1.4, .5, 1)
+    }
+
+    .rc.flip .fl {
+      transform: rotateY(180deg)
+    }
+
+    .fc {
+      grid-area: 1/1;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      min-height: 270px;
+      padding: 28px 20px;
+      border-radius: 22px;
+      border: 2px solid var(--ac);
+      background: rgba(10, 12, 28, .88);
+      box-shadow: 0 0 50px color-mix(in srgb, var(--ac) 45%, transparent);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      text-align: center;
+      overflow: hidden
+    }
+
+    .t1 .fc {
+      min-height: 400px
+    }
+
+    .t2 .fc,
+    .t3 .fc {
+      min-height: 340px
+    }
+
+    .rev {
+      transform: rotateY(180deg)
+    }
+
+    .sealed i {
+      font-size: 64px;
+      font-style: normal
+    }
+
+    .sealed b {
+      font: 700 56px var(--disp, inherit);
+      color: var(--ac)
+    }
+
+    .sealed small {
+      color: var(--muted, #9aa);
+      font-size: 18px
+    }
+
+    .rc.shk .sealed {
+      animation: shk .35s infinite
+    }
+
+    @keyframes shk {
+      25% {
+        transform: translate(-5px, 2px) rotate(-1.5deg)
+      }
+
+      75% {
+        transform: translate(5px, -2px) rotate(1.5deg)
+      }
+    }
+
+    .rk {
+      font: 600 16px var(--mono, monospace);
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: var(--ac)
+    }
+
+    .nm {
+      font: 700 clamp(28px, 8vw, 40px)/1.1 var(--disp, inherit);
+      color: #fff;
+      overflow-wrap: anywhere
+    }
+
+    .t1 .nm {
+      font-size: clamp(36px, 10vw, 56px)
+    }
+
+    .nm span {
+      display: inline-block;
+      animation: drop .8s both cubic-bezier(.34, 1.56, .64, 1), wave 2s ease-in-out infinite;
+      animation-delay: var(--d), calc(var(--d) + .8s)
+    }
+
+    @keyframes drop {
+      from {
+        transform: translateY(-120px) scale(.2) rotate(-30deg);
+        opacity: 0
+      }
+    }
+
+    @keyframes wave {
+      50% {
+        transform: translateY(-8px)
+      }
+    }
+
+    .pt {
+      font: 600 clamp(22px, 6vw, 30px) var(--mono, monospace);
+      color: var(--ac)
+    }
+
+    .tm {
+      font: 14px var(--mono, monospace);
+      color: var(--muted, #9aa)
+    }
+
+    .ch {
+      font-size: 18px;
+      font-weight: 600;
+      color: #fff;
+      min-height: 26px
+    }
+
+    .crown {
+      position: absolute;
+      top: -6px;
+      font-size: 64px;
+      animation: crown 1s .5s both cubic-bezier(.34, 1.56, .64, 1)
+    }
+
+    @keyframes crown {
+      from {
+        transform: translateY(-300px) rotate(-40deg);
+        opacity: 0
+      }
+    }
+
+    .rev::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(110deg, transparent 40%, rgba(255, 255, 255, .35) 50%, transparent 60%);
+      transform: translateX(-120%)
+    }
+
+    .flip .rev::after {
+      animation: swp 1.4s .6s
+    }
+
+    @keyframes swp {
+      to {
+        transform: translateX(120%)
+      }
+    }
+
+    #dots {
+      position: absolute;
+      bottom: 22px;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: center;
+      padding: 0 12px
+    }
+
+    #dots i {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      border: 1px solid var(--line, #2a2d45);
+      font: 11px/24px var(--mono, monospace);
+      text-align: center;
+      font-style: normal;
+      color: var(--muted, #9aa);
+      transition: .4s
+    }
+
+    #dots i.cur {
+      border-color: #fff;
+      color: #fff;
+      transform: scale(1.35);
+      box-shadow: 0 0 14px var(--ac)
+    }
+
+    #dots i.done {
+      background: var(--cyan, #6ee7ff);
+      color: #04050b;
+      border-color: transparent
+    }
+
+    #fl {
+      position: absolute;
+      inset: 0;
+      background: #fff;
+      opacity: 0;
+      pointer-events: none
+    }
+
+    #fl.go {
+      animation: fla .9s
+    }
+
+    @keyframes fla {
+      0% {
+        opacity: .9
+      }
+
+      100% {
+        opacity: 0
+      }
+    }
+
+    #revealStage.shake {
+      animation: sk .7s
+    }
+
+    @keyframes sk {
+      20% {
+        transform: translate(-10px, 6px)
+      }
+
+      40% {
+        transform: translate(9px, -7px)
+      }
+
+      60% {
+        transform: translate(-6px, 4px)
+      }
+
+      80% {
+        transform: translate(4px, -3px)
+      }
+    }
+
+    .em {
+      position: absolute;
+      bottom: -60px;
+      font-size: 34px;
+      animation: up 4.5s linear forwards;
+      pointer-events: none
+    }
+
+    @keyframes up {
+      to {
+        transform: translateY(-115vh) rotate(40deg)
+      }
+    }
+
+    #fx {
+      position: fixed;
+      inset: 0;
+      z-index: 150;
+      pointer-events: none
+    }
+
+    /* summary */
+    #summaryStage {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      overflow-y: auto;
+      padding: 24px 16px 60px
+    }
+
+    .sc {
+      max-width: 1000px;
+      margin: 0 auto;
+      text-align: center
+    }
+
+    .pod {
+      display: flex;
+      justify-content: center;
+      align-items: flex-end;
+      gap: 14px;
+      margin: 40px 0 28px
+    }
+
+    .pi {
+      flex: 1;
+      max-width: 300px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      text-align: center;
+      animation: rise 1s both cubic-bezier(.34, 1.56, .64, 1)
+    }
+
+    .pi .bx {
+      width: 100%;
+      padding: 18px 10px;
+      border-radius: 16px 16px 0 0;
+      border: 2px solid var(--c);
+      background: linear-gradient(var(--c2), rgba(0, 0, 0, .4));
+      box-shadow: 0 0 36px var(--c2);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      align-items: center;
+      justify-content: flex-start;
+      position: relative
+    }
+
+    .pi.p1 {
+      --c: #ffd700;
+      --c2: rgba(255, 215, 0, .22);
+      order: 2
+    }
+
+    .pi.p2 {
+      --c: #dfe6f5;
+      --c2: rgba(223, 230, 245, .16);
+      order: 1
+    }
+
+    .pi.p3 {
+      --c: #cd7f32;
+      --c2: rgba(205, 127, 50, .2);
+      order: 3
+    }
+
+    .p1 .bx {
+      min-height: 250px
+    }
+
+    .p2 .bx {
+      min-height: 200px
+    }
+
+    .p3 .bx {
+      min-height: 160px
+    }
+
+    .pi .m {
+      font-size: 40px
+    }
+
+    .p1 .m {
+      font-size: 52px;
+      animation: flt 3s infinite
+    }
+
+    .pi .n {
+      font: 700 clamp(18px, 3vw, 26px)/1.15 var(--disp, inherit);
+      overflow-wrap: anywhere
+    }
+
+    .pi .s {
+      font: 600 16px var(--mono, monospace);
+      color: var(--c)
+    }
+
+    .pi .t {
+      font: 13px var(--mono, monospace);
+      color: var(--muted, #9aa)
+    }
+
+    .pi .r {
+      margin-top: auto;
+      font: 700 30px var(--disp, inherit);
+      color: var(--c)
+    }
+
+    .rest {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+      gap: 12px
+    }
+
+    .ri {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      padding: 12px 16px;
+      border: 1px solid var(--line, #2a2d45);
+      border-radius: 12px;
+      background: rgba(255, 255, 255, .03);
+      text-align: left;
+      animation: rise .7s both
+    }
+
+    .ri b {
+      font: 700 16px var(--mono, monospace);
+      color: var(--cyan, #6ee7ff);
+      width: 34px
+    }
+
+    .ri span {
+      flex: 1;
+      font-weight: 600;
+      overflow-wrap: anywhere
+    }
+
+    .ri em {
+      font: 14px var(--mono, monospace);
+      font-style: normal;
+      color: var(--cyan, #6ee7ff)
+    }
+
+    @keyframes rise {
+      from {
+        transform: translateY(80px) scale(.8);
+        opacity: 0
+      }
+    }
+
+    .sa {
+      margin-top: 36px;
+      display: flex;
+      justify-content: center;
+      gap: 14px;
+      flex-wrap: wrap
+    }
+
+    @media(max-width:640px) {
+      .pod {
+        flex-direction: column;
+        align-items: stretch
+      }
+
+      .pi {
+        max-width: none
+      }
+
+      .p1 .bx,
+      .p2 .bx,
+      .p3 .bx {
+        min-height: 0
+      }
+
+      .pi .r {
+        display: none
+      }
+
+      .pi.p1 {
+        order: 1
+      }
+
+      .pi.p2 {
+        order: 2
+      }
+
+      .pi.p3 {
+        order: 3
+      }
+
+      .pi .bx {
+        border-radius: 16px
+      }
+    }
+
+    @media(prefers-reduced-motion:reduce) {
+      * {
+        animation: none !important
+      }
+
+      .fl {
+        transition: none
+      }
+
+      .rc {
+        transition: opacity .4s
+      }
+    }
+    .hide-time .tm-col, .hide-time .tm, .hide-time .t { display: none !important; }
+  </style>
+</head>
+
+<body data-page="leaderboard">
+  <canvas id="wormhole" aria-hidden="true"></canvas>
+  <div class="bg-vignette" aria-hidden="true"></div>
+  <header class="topnav">
+    <div class="brand">
+      <img src="./assets/neura-logo.jpg" alt="" class="brand-logo-img"
+        onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+      <span class="brand-logo-fallback" aria-hidden="true">N</span>
+      <div class="brand-text"><b>NEURA</b><small>Prompt engineering hackathon</small></div>
+    </div>
+  </header>
+
+  <main class="page-container" id="appRoot">
+    <section id="entryStage" class="lb-layout">
+      <div id="e1">
+        <div class="trophy">🏆</div>
+        <h1 class="heading-lg" style="margin-bottom:16px">Select teams for the reveal</h1>
+        <p class="sub-text" style="margin-bottom:36px">Pick the winners, set their order, then enter points and time.
+        </p>
+        <button class="btn btn-primary btn-lg" id="btnOpenSelectModal">Select Teams</button>
+      </div>
+      <div id="e2" style="display:none">
+        <div class="trophy">🏆</div>
+        <h1 class="heading-xl glow" style="margin-bottom:12px">It's Time for Result Declaration</h1>
+        <h2 class="top-n" id="topN">The Top 10</h2>
+        <button class="btn btn-primary btn-lg pulse" id="btnShowResults">Show Results</button><br><br>
+        <button class="btn btn-ghost" id="btnEdit">Edit selection</button>
+      </div>
+    </section>
+
+    <div class="neura-modal-overlay" id="modalTeams" style="display:none" role="dialog" aria-modal="true">
+      <div class="neura-modal"
+        style="width:800px;max-width:95vw;max-height:90vh;display:flex;flex-direction:column;margin:auto">
+        <div
+          style="padding:18px 24px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:12px">
+          <div>
+            <h3 class="heading-md" style="margin:0">Select top teams</h3><small class="sub-text" id="cnt">0/10
+              selected</small> <small class="sub-text">· drag rows or use ▲▼ to set rank</small>
+          </div>
+          <div style="display:flex; gap:16px; align-items:center;">
+            <div style="display:flex; gap:8px; align-items:center; font-size:13px; color:var(--text); margin-right: 12px;">
+               <label style="cursor:pointer; display:flex; align-items:center; gap:4px; margin:0;"><input type="radio" name="topNum" value="3" id="rTop3" style="width:16px;height:16px;"> Top 3</label>
+               <label style="cursor:pointer; display:flex; align-items:center; gap:4px; margin:0;"><input type="radio" name="topNum" value="10" id="rTop10" checked style="width:16px;height:16px;"> Top 10</label>
+            </div>
+            <label style="display:flex; align-items:center; gap:6px; font-size:13px; color:var(--muted); cursor:pointer; margin:0;"><input type="checkbox" id="timeToggle" checked style="width:16px; height:16px; cursor:pointer;"> Require Time</label>
+            <button class="btn btn-ghost" id="btnCloseModal" aria-label="Close"
+              style="padding:4px 10px;font-size:20px">&times;</button>
+          </div>
+        </div>
+        <div style="padding:12px 24px;border-bottom:1px solid var(--line)">
+          <div class="field" style="margin:0"><input type="text" id="teamSearchInput"
+              placeholder="Search teams by name..." style="padding:10px 14px"></div>
+        </div>
+        <div style="padding:16px 24px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:8px"
+          id="teamsListContainer"></div>
+        <div style="padding:14px 24px;border-top:1px solid var(--line);text-align:right">
+          <span id="modalError" style="color:var(--red);font-size:13px;margin-right:12px;display:none">Enter valid
+            points and time for every selected team.</span>
+          <button id="btnSaveTeams" class="btn btn-primary">Save Selection</button>
+        </div>
+      </div>
+    </div>
+
+    <section id="revealStage" aria-live="polite">
+      <div id="dim"></div>
+      <div id="rays"></div>
+      <div class="ctl">
+        <button class="btn btn-ghost btn-sm" id="btnPauseReveal">Pause</button>
+        <button class="btn btn-ghost btn-sm" id="btnMute" aria-label="Toggle sound">🔊</button>
+        <button class="btn btn-ghost btn-sm" id="btnSkipReveal">Skip to End</button>
+      </div>
+      <div id="cd"></div>
+      <div id="cards"></div>
+      <div id="dots"></div>
+      <div id="fl"></div>
+    </section>
+
+    <section id="summaryStage">
+      <div class="sc">
+        <h1 class="heading-xl">Final Standings</h1>
+        <p class="sub-text">Congratulations to all participants! 🎉</p>
+        <div id="summaryList"></div>
+        <div class="sa">
+          <button class="btn btn-ghost btn-lg" id="btnBackToEntry">Edit Data</button>
+          <button class="btn btn-primary btn-lg" id="btnReplay">Replay Reveal</button>
+        </div>
+      </div>
+    </section>
+
+    <div class="neura-modal-overlay" id="alertModal" style="display:none;z-index:2000" role="dialog" aria-modal="true">
+      <div class="neura-modal" style="width:400px;max-width:90vw;margin:auto;padding:32px;text-align:center">
+        <h3 class="heading-md" style="margin-bottom:12px;color:var(--red)">Limit Reached</h3>
+        <p class="sub-text" style="margin-bottom:24px">You can select a maximum of 10 teams.</p>
+        <button class="btn btn-primary" id="btnAlertOk" style="width:100%">OK</button>
+      </div>
+    </div>
+  </main>
+  <canvas id="fx" aria-hidden="true"></canvas>
+
+  <script type="module">
+    import { initWormhole } from './js/components/wormhole.js';
+    initWormhole();
+  </script>
+  <script>
+    const $ = id => document.getElementById(id); let MAX = 10;
+    const ALL_TEAMS = ["Zoya Square", "Cipher Syndicate", "CookedAI", "Dynamic Duo", "Team EYWA", "The Hustlers", "Techno Tiaras", "Hackstreet Boys", "DeadEnd", "The Prompters", "Team Krishna", "Daredevils", "rm -rf Prompt", "Bug Hunters", "Team_Abhedya", "Azathoth", "Squarex", "Newt", "TokenCraft_DK", "Prompt Sync", "Nexovanta", "Impact", "AITHER", "The Curious Ones", "Mind2Model", "Astra", "Shit Code", "Silent Raptors", "CodeVerse", "ContextX_CG", "TechTitan", "TokenCraft_YK", "innovatrix", "Team Invincible", "AuraStack", "Code Duo", "Syntax Syndicate", "Duo prompters", "PromtHers", "Token Effort", "Nexora", "TokenSmiths", "ContextX_SJ", "HerByte", "Neon Vixens", "Brain Offline", "Team TECHX", "Izra", "Punishers", "Token Titans", "Sky Team", "Team Astra", "Team Wolf", "Innovix", "Byte Me", "Team Starbucks", "Team Text", "FantomDuo", "TECH SAKHI", "Deadpool & Wolerine", "She innovates"].sort((a, b) => a.localeCompare(b));
+    const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    const rm = matchMedia('(prefers-reduced-motion:reduce)').matches;
+    let D = [], rid = 0, paused = false, adv = false, muted = false;
+    const st = $('revealStage'), cards = $('cards'), L = $('teamsListContainer');
+
+    /* ---------- Sound (synthesised, no files) ---------- */
+    let AC;
+    const au = () => { if (muted) return null; if (!AC) try { AC = new (window.AudioContext || window.webkitAudioContext)() } catch (e) { } return AC };
+    function tone(f, t, d, ty, v) { const a = au(); if (!a) return; const o = a.createOscillator(), g = a.createGain(), s = a.currentTime + t; o.type = ty; o.frequency.value = f; g.gain.setValueAtTime(v, s); g.gain.exponentialRampToValueAtTime(.001, s + d); o.connect(g); g.connect(a.destination); o.start(s); o.stop(s + d) }
+    function noise(t, d, v, f) { const a = au(); if (!a) return; const b = a.createBuffer(1, a.sampleRate * d, a.sampleRate), x = b.getChannelData(0); for (let i = 0; i < x.length; i++)x[i] = Math.random() * 2 - 1; const s = a.createBufferSource(), fl = a.createBiquadFilter(), g = a.createGain(); s.buffer = b; fl.type = 'bandpass'; fl.frequency.value = f; g.gain.value = v; s.connect(fl); fl.connect(g); g.connect(a.destination); s.start(a.currentTime + t) }
+    const SFX = {
+      tick: () => tone(880, 0, .12, 'square', .06),
+      whoosh: () => noise(0, .6, .25, 900),
+      drum(d) { let i = .4; for (let t = 0; t < d; t += i) { tone(90, t, .18, 'triangle', .35); noise(t, .07, .15, 300); i = Math.max(.07, i * .88) } },
+      boom: () => { tone(55, 0, .7, 'sawtooth', .3); noise(0, .5, .4, 600) },
+      fan: () => [523, 659, 784, 1047, 1319, 1568].forEach((f, i) => tone(f, i * .11, .6, 'triangle', .18)),
+      clap(d) { for (let t = 0; t < d; t += .035)noise(t, .03, Math.random() * .18, 2500) }
+    };
+
+    /* ---------- Confetti & fireworks canvas ---------- */
+    const cv = $('fx'), cx = cv.getContext('2d'), COL = ['#ffd700', '#ffb347', '#ff8a9b', '#52e8a8', '#b06aff', '#6ee7ff'];
+    let P = [], running = false;
+    const fit = () => { cv.width = innerWidth; cv.height = innerHeight }; addEventListener('resize', fit); fit();
+    const rnd = a => a[Math.random() * a.length | 0];
+    function conf(x, y, n, dx, vy0, vyr) { if (rm) return; for (let i = 0; i < n; i++)P.push({ k: 0, x, y, vx: dx + (Math.random() - .5) * 7, vy: vy0 - Math.random() * vyr, g: .28, w: 6 + Math.random() * 6, r: Math.random() * 6, vr: (Math.random() - .5) * .4, c: rnd(COL), l: 1, d: .004 }); go() }
+    function burst(x, y, c) { if (rm) return; for (let i = 0; i < 80; i++) { const a = Math.random() * 6.283, s = Math.random() * 7 + 2; P.push({ k: 1, x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, g: .08, w: 3, c, l: 1, d: .012 + Math.random() * .01 }) } go() }
+    function go() { if (!running) { running = true; requestAnimationFrame(loop) } }
+    function loop() {
+      if (!P.length) { running = false; cx.clearRect(0, 0, cv.width, cv.height); return }
+      if (!paused) {
+        cx.clearRect(0, 0, cv.width, cv.height); if (P.length > 1200) P.splice(0, P.length - 1200);
+        P = P.filter(p => {
+          p.x += p.vx; p.y += p.vy; p.vy += p.g; p.vx *= .99; p.l -= p.d; cx.globalAlpha = Math.max(0, p.l); cx.fillStyle = p.c;
+          if (p.k) { cx.fillRect(p.x, p.y, p.w, p.w) } else { p.r += p.vr; cx.save(); cx.translate(p.x, p.y); cx.rotate(p.r); cx.fillRect(-p.w / 2, -p.w / 4, p.w, p.w / 2); cx.restore() }
+          return p.l > 0 && p.y < cv.height + 30
+        }); cx.globalAlpha = 1
+      }
+      requestAnimationFrame(loop)
+    }
+    function show(ms, every) { const iv = setInterval(() => { if (paused) return; burst(Math.random() * cv.width, Math.random() * cv.height * .55, rnd(COL)); conf(Math.random() * cv.width, -10, 6, 0, 1, -3) }, every || 500); setTimeout(() => clearInterval(iv), ms) }
+    function cannons(n) { conf(0, cv.height, n, 9, -12, 16); conf(cv.width, cv.height, n, -9, -12, 16) }
+
+    /* ---------- Timing (pause / skip aware) ---------- */
+    const wait = (ms, sk) => new Promise((res, rej) => { const my = rid; let e = 0; const iv = setInterval(() => { if (my !== rid) { clearInterval(iv); return rej() } if (paused) return; e += 50; if (e >= ms || (sk && adv)) { clearInterval(iv); adv = false; res() } }, 50) });
+
+    /* ---------- Text effects ---------- */
+    function decode(el, txt, ms) { const s = performance.now(), G = 'ABCDEFGHJKLMNPQRSTUVWXYZ#$%&*01'; (function f(n) { const p = Math.min(1, (n - s) / ms), k = p * txt.length; el.textContent = [...txt].map((c, i) => c === ' ' || i < k ? c : G[Math.random() * G.length | 0]).join(''); if (p < 1) requestAnimationFrame(f) })(s) }
+    function count(el, v, ms) { const s = performance.now(), d = (String(v).split('.')[1] || '').length; (function f(n) { const p = Math.min(1, (n - s) / ms); el.textContent = (v * (1 - Math.pow(1 - p, 3))).toFixed(d) + ' pts'; if (p < 1) requestAnimationFrame(f) })(s) }
+    function letters(el, txt) { el.textContent = '';[...txt].forEach((c, k) => { const s = document.createElement('span'); s.textContent = c === ' ' ? '\u00A0' : c; s.style.setProperty('--d', k * .07 + 's'); el.appendChild(s) }) }
+    const ord = r => r + (r % 10 === 1 && r !== 11 ? 'st' : r % 10 === 2 && r !== 12 ? 'nd' : r % 10 === 3 && r !== 13 ? 'rd' : 'th');
+
+    /* ---------- Reveal sequence ---------- */
+    const CH = { 1: ['🏆 CHAMPIONS! 🏆', 'Congratulations — you did it! 🎉'], 2: ['🥈 So close, so strong!', 'Brilliant work, runner-up! 👏'], 3: ['🥉 On the podium!', 'Fantastic performance! 🔥'] };
+    function party(r) {
+      const w = cv.width; st.classList.add('shake'); setTimeout(() => st.classList.remove('shake'), 700); $('fl').classList.remove('go'); void $('fl').offsetWidth; $('fl').classList.add('go');
+      SFX.fan(); SFX.clap(r === 1 ? 6 : 3); cannons(r === 1 ? 150 : 90); show(r === 1 ? 10000 : 4500, r === 1 ? 350 : 600);
+      if (!rm) for (let i = 0; i < (r === 1 ? 24 : 12); i++) { const e = document.createElement('span'); e.className = 'em'; e.textContent = rnd(['🎉', '🎊', '✨', '🏆', '🥳', '⭐', '🎈']); e.style.left = Math.random() * 100 + '%'; e.style.animationDelay = Math.random() * 2.5 + 's'; st.appendChild(e); setTimeout(() => e.remove(), 8000) }
+    }
+    async function reveal(i) {
+      const t = D[i], r = i + 1, top = r <= 3, col = { 1: '#ffd700', 2: '#dfe6f5', 3: '#cd7f32' }[r] || '#6ee7ff';
+      st.style.setProperty('--ac', col); st.classList.toggle('top', top); $('rays').classList.remove('on');
+      [...$('dots').children].forEach(d => d.classList.toggle('cur', +d.dataset.r === r));
+      const c = document.createElement('div'); c.className = 'rc' + (top ? ' t' + r : '');
+      c.innerHTML = `<div class="fl"><div class="fc sealed"><i>🔒</i><b>#${r}</b><small>${r === 1 ? 'And the champion is…' : r === 2 ? 'The runner-up is…' : r === 3 ? 'Third place goes to…' : 'Rank ' + r + ' is…'}</small></div><div class="fc rev">${r === 1 ? '<span class="crown">👑</span>' : ''}<div class="rk">${r === 1 ? 'Champions' : r === 2 ? 'Runner Up' : ord(r) + ' Place'}</div><div class="nm"></div><div class="pt">0 pts</div><div class="tm">⏱ ${esc(t.timestamp)}</div><div class="ch"></div></div></div>`;
+      cards.appendChild(c); void c.offsetWidth; c.classList.add('in'); SFX.whoosh();
+      await wait(1000); c.classList.add('shk');
+      const sus = top ? { 3: 3500, 2: 4500, 1: 6500 }[r] : 1600; if (top) SFX.drum(sus / 1000); else SFX.tick();
+      await wait(sus);
+      c.classList.remove('shk'); c.classList.add('flip'); SFX.boom();
+      const nm = c.querySelector('.nm'); await wait(350);
+      if (top) { letters(nm, t.name); $('rays').classList.add('on'); c.querySelector('.ch').textContent = CH[r][0]; party(r); setTimeout(() => { if (c.isConnected) c.querySelector('.ch').textContent = CH[r][1] }, 3500) }
+      else decode(nm, t.name, 900);
+      count(c.querySelector('.pt'), t.points, 1500);
+      await wait(top ? { 3: 6500, 2: 7500, 1: 11000 }[r] : 3800, true);
+      c.classList.add('out');[...$('dots').children].forEach(d => { if (+d.dataset.r === r) d.classList.add('done') });
+      await wait(700); c.remove();
+    }
+    async function play() {
+      const my = ++rid; paused = false; st.classList.remove('paused', 'top'); $('btnPauseReveal').textContent = 'Pause';
+      cards.innerHTML = ''; P = []; $('rays').classList.remove('on');
+      const dots = $('dots'); dots.innerHTML = ''; for (let r = D.length; r >= 1; r--)dots.insertAdjacentHTML('beforeend', `<i data-r="${r}">${r}</i>`);
+      try {
+        const cd = $('cd'); st.style.setProperty('--ac', '#6ee7ff');
+        for (const n of [3, 2, 1]) { cd.innerHTML = n + '<small>Get ready…</small>'; cd.style.animation = 'none'; void cd.offsetWidth; cd.style.animation = 'pop .8s'; SFX.tick(); await wait(950) }
+        cd.innerHTML = 'GO!'; SFX.whoosh(); cd.style.animation = 'none'; void cd.offsetWidth; cd.style.animation = 'pop .6s'; await wait(700); cd.innerHTML = '';
+        for (let i = D.length - 1; i >= 0; i--)await reveal(i);
+        await wait(300); if (my === rid) summary();
+      } catch (e) { }
+    }
+
+    /* ---------- Summary podium ---------- */
+    function summary() {
+      rid++; st.style.display = 'none'; st.classList.remove('top'); $('summaryStage').style.display = 'block';
+      const box = $('summaryList'), medal = ['', '🥇', '🥈', '🥉']; let h = '<div class="pod">';
+      D.slice(0, 3).forEach((t, i) => { const r = i + 1, dl = { 1: .9, 2: .5, 3: .1 }[r]; h += `<div class="pi p${r}" style="animation-delay:${dl}s"><div class="bx"><div class="m">${r === 1 ? '👑' : medal[r]}</div><div class="n">${esc(t.name)}</div><div class="s">${esc(t.points)} pts</div><div class="t">⏱ ${esc(t.timestamp)}</div><div class="r">#${r}</div></div></div>` });
+      h += '</div><div class="rest">';
+      D.slice(3).forEach((t, i) => { h += `<div class="ri" style="animation-delay:${1.6 + i * .12}s"><b>#${i + 4}</b><span>${esc(t.name)}</span><em>${esc(t.points)} pts</em></div>` });
+      box.innerHTML = h + '</div>';
+      setTimeout(() => { cannons(100); show(4000, 500); SFX.fan() }, 900);
+    }
+
+    /* ---------- Controls ---------- */
+    const start = () => { $('entryStage').style.display = 'none'; $('summaryStage').style.display = 'none'; st.style.display = 'flex'; au(); play() };
+    $('btnShowResults').onclick = start; $('btnReplay').onclick = () => { P = []; start() };
+    $('btnPauseReveal').onclick = () => { paused = !paused; st.classList.toggle('paused', paused); $('btnPauseReveal').textContent = paused ? 'Resume' : 'Pause'; if (AC) paused ? AC.suspend() : AC.resume() };
+    $('btnMute').onclick = () => { muted = !muted; $('btnMute').textContent = muted ? '🔇' : '🔊'; if (AC && muted) AC.suspend(); else if (AC) AC.resume() };
+    $('btnSkipReveal').onclick = () => { paused = false; if (AC) AC.resume(); st.classList.remove('paused'); summary() };
+    st.addEventListener('click', e => { if (!e.target.closest('.ctl')) adv = true });
+    document.addEventListener('keydown', e => { if (st.style.display !== 'flex') return; if (e.code === 'Space') { e.preventDefault(); $('btnPauseReveal').click() } if (e.key === 'ArrowRight') adv = true; if (e.key === 'm') $('btnMute').click() });
+    $('btnBackToEntry').onclick = () => { P = []; $('summaryStage').style.display = 'none'; $('entryStage').style.display = 'block'; openModal() };
+
+    /* ---------- Team selection modal ---------- */
+    const sel = () => [...L.querySelectorAll('.tr.on')].sort((a, b) => a.style.order - b.style.order);
+    function ranks() { const s = sel(); s.forEach((r, i) => { r.style.order = i; r.querySelector('.rk').textContent = '#' + (i + 1) }); $('cnt').textContent = s.length + '/' + MAX + ' selected' }
+    ALL_TEAMS.forEach((n, i) => {
+      const r = document.createElement('div'); r.className = 'tr'; r.dataset.n = n;
+      r.innerHTML = `<div class="rk"></div><input type="checkbox" id="cb${i}" style="width:18px;height:18px"><label for="cb${i}">${esc(n)}</label><div class="mv"><button type="button" data-d="-1" aria-label="Move up">▲</button><button type="button" data-d="1" aria-label="Move down">▼</button></div><div class="field f"><input type="number" class="pts" step="any" min="0" placeholder="Points" disabled style="padding:8px 10px"></div><div class="field f tm-col"><input type="time" class="tm" step="1" disabled style="padding:8px 10px"></div>`; L.appendChild(r)
+    });
+    L.addEventListener('change', e => {
+      const cb = e.target; if (cb.type !== 'checkbox') return; const r = cb.closest('.tr'), p = r.querySelector('.pts'), t = r.querySelector('.tm');
+      if (cb.checked) { if (sel().length >= MAX) { cb.checked = false; $('alertModal').style.display = 'flex'; return } r.style.order = sel().length; r.classList.add('on'); r.draggable = true; p.disabled = t.disabled = false; p.focus() }
+      else { r.classList.remove('on'); r.draggable = false; r.style.order = 1000; p.disabled = t.disabled = true; p.value = t.value = ''; r.querySelector('.rk').textContent = '' }
+      ranks()
+    });
+    L.addEventListener('input', e => e.target.classList.remove('bad'));
+    L.addEventListener('click', e => { const b = e.target.closest('.mv button'); if (!b) return; const r = b.closest('.tr'), s = sel(), i = s.indexOf(r), j = i + +b.dataset.d; if (s[j]) { const a = s[i].style.order; s[i].style.order = s[j].style.order; s[j].style.order = a; ranks() } });
+    let drag = null;
+    L.addEventListener('dragstart', e => { const r = e.target.closest('.tr.on'); if (!r) return e.preventDefault(); drag = r; e.dataTransfer.effectAllowed = 'move'; r.style.opacity = .5 });
+    L.addEventListener('dragover', e => { e.preventDefault(); L.querySelectorAll('.over').forEach(x => x.classList.remove('over')); const t = e.target.closest('.tr.on'); if (t && t !== drag) t.classList.add('over') });
+    L.addEventListener('drop', e => { e.preventDefault(); const t = e.target.closest('.tr.on'); if (drag && t && t !== drag) { const s = sel(); s.splice(s.indexOf(drag), 1); s.splice(s.indexOf(t) + (0), 0, drag); s.forEach((r, i) => r.style.order = i); ranks() } });
+    L.addEventListener('dragend', () => { if (drag) drag.style.opacity = 1; drag = null; L.querySelectorAll('.over').forEach(x => x.classList.remove('over')) });
+    $('teamSearchInput').addEventListener('input', e => { const q = e.target.value.toLowerCase(); L.querySelectorAll('.tr').forEach(r => r.hidden = !r.dataset.n.toLowerCase().includes(q)) });
+    $('timeToggle').addEventListener('change', e => { document.body.classList.toggle('hide-time', !e.target.checked); });
+    document.querySelectorAll('input[name="topNum"]').forEach(r => r.addEventListener('change', e => {
+      MAX = parseInt(e.target.value, 10);
+      $('alertModal').querySelector('p').textContent = `You can select a maximum of ${MAX} teams.`;
+      const s = sel();
+      if (s.length > MAX) {
+        for (let i = s.length - 1; i >= MAX; i--) {
+          s[i].querySelector('input[type="checkbox"]').click();
+        }
+      }
+      ranks();
+    }));
+    function openModal() { $('modalTeams').style.display = 'flex'; const s = $('teamSearchInput'); s.value = ''; s.dispatchEvent(new Event('input')) }
+    $('btnOpenSelectModal').onclick = $('btnEdit').onclick = openModal;
+    $('btnCloseModal').onclick = () => $('modalTeams').style.display = 'none';
+    $('btnAlertOk').onclick = () => $('alertModal').style.display = 'none';
+    $('btnSaveTeams').onclick = () => {
+      let bad = false; const out = sel().map(r => {
+        const p = r.querySelector('.pts'), t = r.querySelector('.tm'), v = parseFloat(p.value);
+        const rqTime = $('timeToggle').checked;
+        if (isNaN(v) || v < 0) { p.classList.add('bad'); bad = true } if (rqTime && !t.value) { t.classList.add('bad'); bad = true } return { name: r.dataset.n, points: v, timestamp: rqTime ? t.value : '' }
+      });
+      $('modalError').style.display = bad ? 'inline' : 'none'; if (bad) return;
+      D = out; $('modalTeams').style.display = 'none';
+      $('e1').style.display = D.length ? 'none' : 'block'; $('e2').style.display = D.length ? 'block' : 'none'; $('topN').textContent = 'The Top ' + D.length;
+    };
+  </script>
+</body>
+
+</html>
